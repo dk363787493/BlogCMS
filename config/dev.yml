@@ -1,0 +1,2 @@
+mysql:
+  dsn: root:123456@tcp(156.232.11.140:3305)/blog?charset=utf8mb4&parseTime=True&loc=Local
