@@ -1,2 +1,5 @@
 mysql:
-  dsn: root:123456@tcp(156.232.11.140:3305)/blog?charset=utf8mb4&parseTime=True&loc=Local
+  dsn: root:123456@tcp(127.0.0.1:3306)/lovepet_cms?charset=utf8mb4&parseTime=True&loc=Local
+
+mongo:
+  url: mongodb://root:123456@127.0.0.1:27017

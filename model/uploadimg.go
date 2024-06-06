@@ -1,6 +1,7 @@
 package model
 
 import (
+	"BlogCMS/db"
 	"errors"
 	"gorm.io/gorm"
 	"time"
@@ -20,9 +21,9 @@ func (UploadImg) TableName() string {
 }
 
 // FindImageByName 根据图片名称查询图片记录
-func FindImageByName(db *gorm.DB, ImgUuid string) (*UploadImg, error) {
+func FindImageByName(ImgUuid string) (*UploadImg, error) {
 	var image UploadImg
-	result := db.Where("img_uuid = ?", ImgUuid).First(&image)
+	result := db.MysqlDB.Where("img_uuid = ?", ImgUuid).First(&image)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return nil, nil // 没有找到记录不一定是一个错误
@@ -32,8 +33,8 @@ func FindImageByName(db *gorm.DB, ImgUuid string) (*UploadImg, error) {
 	return &image, nil
 }
 
-func InsertImage(db *gorm.DB, image *UploadImg) error {
-	result := db.Create(&image)
+func InsertImage(image *UploadImg) error {
+	result := db.MysqlDB.Create(&image)
 	if result.Error != nil {
 		return result.Error
 	}

@@ -17,7 +17,7 @@ func main() {
 	r.MaxMultipartMemory = 8 << 20
 	r.Use(CORSMiddleware())
 	// 处理文件上传
-	r.POST("/upload", func(c *gin.Context) {
+	r.POST("/upload_img", func(c *gin.Context) {
 		file, err := c.FormFile("file")
 		if err != nil {
 			fmt.Println("err:", err.Error())
@@ -47,22 +47,20 @@ func main() {
 		}
 
 		// 保存到数据库
-		if err := model.InsertImage(utils.GetMysqlDB(), &image); err != nil {
+		if err := model.InsertImage(&image); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			fmt.Println("err:", err.Error())
 			return
 		}
 		fmt.Println("ImgUuid:", image.ImgUuid)
 		//c.JSON(http.StatusOK, gin.H{"success": true, "url": image.ImgUuid})
-		c.JSON(http.StatusOK, gin.H{"location": fmt.Sprintf("http://localhost:8080/photo/%s", image.ImgUuid)})
+		c.JSON(http.StatusOK, gin.H{"success": true, "location": fmt.Sprintf("http://localhost:8080/photo/%s", image.ImgUuid)})
 	})
 	r.GET("/photo/:id", func(c *gin.Context) {
 		// 从请求中获取图片ID
 		photoID := c.Param("id")
-
 		// 从数据库中检索图片
-
-		photo, err := model.FindImageByName(utils.GetMysqlDB(), photoID)
+		photo, err := model.FindImageByName(photoID)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				// 没有找到图片
@@ -78,7 +76,18 @@ func main() {
 		// 设置正确的MIME类型
 		c.Data(http.StatusOK, "image/jpeg", photo.Data)
 	})
+	r.POST("/upload_article", func(c *gin.Context) {
+		content := c.PostForm("content")
+		fmt.Println("content:", content)
+		//tag := c.PostForm("tags")
+		//title := c.PostForm("title")
+		//categoryLevel1 := c.PostForm("category-level1")
+		//categoryLevel2 := c.PostForm("category-level2")
 
+		//article := new(model.Article)
+		//article.Content = *(*[]byte)(unsafe.Pointer(&(content)))
+		c.JSON(http.StatusOK, gin.H{"success": true})
+	})
 	r.Run(":8080")
 }
 func CORSMiddleware() gin.HandlerFunc {

@@ -1,4 +1,4 @@
-package utils
+package db
 
 import (
 	"BlogCMS/config"
@@ -9,11 +9,10 @@ import (
 	"os"
 )
 
-var mysqlDB *gorm.DB
+var MysqlDB *gorm.DB
 
 func init() {
 	config := config.Configuration.Mysql
-
 	db, err := gorm.Open(mysql.Open(config.Dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent), // 设置日志级别为 Silent，来关闭日志
 	})
@@ -21,9 +20,5 @@ func init() {
 		slog.Error("err:", err.Error())
 		os.Exit(1)
 	}
-	mysqlDB = db
-}
-
-func GetMysqlDB() *gorm.DB {
-	return mysqlDB
+	MysqlDB = db
 }
