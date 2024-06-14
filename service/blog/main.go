@@ -2,59 +2,54 @@ package main
 
 import (
 	"BlogCMS/model"
-	"BlogCMS/utils"
 	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 func main() {
 	r := gin.Default()
 	r.MaxMultipartMemory = 8 << 20
 	r.Use(CORSMiddleware())
-	// 处理文件上传
-	r.POST("/upload_img", func(c *gin.Context) {
-		file, err := c.FormFile("file")
+
+	r.GET("/article/:id", func(c *gin.Context) {
+		id, _ := strconv.Atoi(c.Param("id"))
+		articles, err := model.GetArticlesById(uint(id))
 		if err != nil {
 			fmt.Println("err:", err.Error())
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
+		c.JSON(http.StatusOK, gin.H{"success": true, "data": articles})
+	})
 
-		// 读取文件内容
-		fileData, err := file.Open()
+	r.GET("/article", func(c *gin.Context) {
+		isShort, _ := strconv.Atoi(c.Query("is_short"))
+		categoryLevelOne := c.Query("category_level_one")
+		categoryOne, _ := strconv.Atoi(categoryLevelOne)
+		categoryLevelTwo := c.Query("category_level_two")
+		categoryTwo, _ := strconv.Atoi(categoryLevelTwo)
+		tags := c.Query("tags")
+		limitStr := c.Query("limit")
+		limit := 10
+		if limitStr != "" {
+			limit, _ = strconv.Atoi(limitStr)
+		}
+		pageStr := c.Query("page")
+		page := 1
+		if pageStr != "" {
+			page, _ = strconv.Atoi(pageStr)
+		}
+		articles, err := model.GetArticles(uint8(isShort), uint8(categoryOne), uint8(categoryTwo), tags, page, limit)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			fmt.Println("err:", err.Error())
-			return
 		}
-		defer fileData.Close()
-		bytes, err := ioutil.ReadAll(fileData)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			fmt.Println("err:", err.Error())
-			return
-		}
-
-		// 创建图片记录
-		image := model.UploadImg{
-			ImgUuid: utils.GenerateFileUUid(),
-			Data:    bytes,
-		}
-
-		// 保存到数据库
-		if err := model.InsertImage(&image); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			fmt.Println("err:", err.Error())
-			return
-		}
-		fmt.Println("ImgUuid:", image.ImgUuid)
-		//c.JSON(http.StatusOK, gin.H{"success": true, "url": image.ImgUuid})
-		c.JSON(http.StatusOK, gin.H{"success": true, "location": fmt.Sprintf("http://localhost:8080/photo/%s", image.ImgUuid)})
+		cnt, _ := model.GetTotalArticlesCnt(uint8(categoryOne), uint8(categoryTwo), tags)
+		c.JSON(http.StatusOK, gin.H{"success": true, "data": articles, "totalCnt": cnt})
 	})
 	r.GET("/photo/:id", func(c *gin.Context) {
 		// 从请求中获取图片ID
@@ -76,19 +71,7 @@ func main() {
 		// 设置正确的MIME类型
 		c.Data(http.StatusOK, "image/jpeg", photo.Data)
 	})
-	r.POST("/upload_article", func(c *gin.Context) {
-		content := c.PostForm("content")
-		fmt.Println("content:", content)
-		//tag := c.PostForm("tags")
-		//title := c.PostForm("title")
-		//categoryLevel1 := c.PostForm("category-level1")
-		//categoryLevel2 := c.PostForm("category-level2")
-
-		//article := new(model.Article)
-		//article.Content = *(*[]byte)(unsafe.Pointer(&(content)))
-		c.JSON(http.StatusOK, gin.H{"success": true})
-	})
-	r.Run(":8080")
+	r.Run(":8081")
 }
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
